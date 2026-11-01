@@ -1,8 +1,8 @@
 # arm_ros2_ws
 
-在 x86_64 Ubuntu 24.04 上，为香橙派 Zero 2W（aarch64）交叉编译 ROS2 Jazzy 功能包的工作空间。
+在 x86_64 Ubuntu 24.04 上，为 ARM64(aarch64) 目标系统交叉编译 ROS2 Jazzy 功能包的工作空间。
 
-香橙派 Zero 2W 只有 1GB 内存，直接在板子上编译激光雷达、导航这类包很容易内存不足。这个仓库用 Docker + QEMU 在电脑上运行 ARM64 编译环境，编译完成后只需要把 `install/` 推到香橙派。
+ARM 系统的内存通常比较有限，直接在目标设备上编译激光雷达、导航这类包很容易内存不足。这个仓库用 Docker + QEMU 在电脑上运行 ARM64 编译环境，编译完成后只需要把 `install/` 推到 ARM 系统。
 
 ## 目录结构
 
@@ -11,7 +11,7 @@ arm_ros2_ws/
 ├── install.sh          # 检测并安装交叉编译环境
 ├── build.sh            # 选择全部或单个包进行编译
 ├── clean.sh            # 清除全部或单个包的构建产物
-├── push.sh             # 把 install/ 推送到香橙派并覆盖远端 install
+├── push.sh             # 把 install/ 推送到 ARM 系统并覆盖远端 install
 ├── docker/
 │   ├── Dockerfile      # ARM64 ROS2 Jazzy 编译镜像
 │   └── entrypoint.sh
@@ -49,19 +49,19 @@ arm_ros2_ws/
 
     脚本会列出 `src/` 里的所有 ROS 包，可以选择全部编译，也可以只编译其中一个。产物在仓库根目录的 `install/` 下。
 
-4. 推送到香橙派：
+4. 推送到 ARM 系统：
 
     ```bash
-    ./push.sh -u orangepi -i 192.168.1.14 -p "~/ros2_ws"
+    ./push.sh -u user -i 192.168.x.xx -p "~/ros2_ws"
     ```
 
     也可以使用简写：
 
     ```bash
-    ./push.sh -orangepi -192.168.1.14 -"~/ros2_ws"
+    ./push.sh -user -192.168.x.xx -"~/ros2_ws"
     ```
 
-    推送完成后，在香橙派上执行：
+    推送完成后，在 ARM 系统上执行：
 
     ```bash
     source ~/ros2_ws/install/setup.bash
@@ -114,7 +114,7 @@ arm_ros2_ws/
 | `--dry-run` | 只打印 Docker 命令，不执行 |
 | `-y, --yes` | 跳过确认 |
 
-编译使用独立的 `build/`、`install/`、`log/` 目录，默认不使用 `--symlink-install`，所以 `install/` 可以直接复制到香橙派。
+编译使用独立的 `build/`、`install/`、`log/` 目录，默认不使用 `--symlink-install`，所以 `install/` 可以直接复制到 ARM 系统。
 
 如果宿主机内存紧张，可以降低并行数：
 
@@ -144,16 +144,16 @@ arm_ros2_ws/
 ./push.sh -u 用户名 -i IP -p "远端路径"
 ```
 
-把本地 `install/` 覆盖到香橙派的 `<远端路径>/install`。默认用户名是 `orangepi`，默认路径是 `~/ros2_ws`。
+把本地 `install/` 覆盖到 ARM 系统的 `<远端路径>/install`。用户名和路径分别用 `-u`、`-p` 指定，默认路径是 `~/ros2_ws`。
 
 | 选项 | 说明 |
 | --- | --- |
 | `-u, --user NAME` | SSH 用户名 |
-| `-i, --ip HOST` | 香橙派 IP 或主机名 |
+| `-i, --ip HOST` | ARM 系统的 IP 或主机名 |
 | `-p, --path PATH` | 远端工作空间路径 |
 | `-P, --port PORT` | SSH 端口，默认 22 |
 | `-k, --key FILE` | SSH 私钥文件 |
-| `-n, --dry-run` | 只打印计划，不连接香橙派 |
+| `-n, --dry-run` | 只打印计划，不连接 ARM 系统 |
 | `-y, --yes` | 跳过确认 |
 
 推送时优先使用 `rsync --delete`，远端没有 `rsync` 时使用 `tar`。两种方式都会覆盖远端原有的 `install/`。
@@ -161,7 +161,7 @@ arm_ros2_ws/
 建议先配置 SSH 免密登录：
 
 ```bash
-ssh-copy-id orangepi@192.168.1.14
+ssh-copy-id user@192.168.x.xx
 ```
 
 ## 工作原理
@@ -221,7 +221,7 @@ QEMU ARM64 没有启用。重新运行：
 先手动确认能登录：
 
 ```bash
-ssh orangepi@192.168.1.14
+ssh user@192.168.x.xx
 ```
 
 检查用户名、IP、网络和 SSH 密钥。使用密码登录时，脚本会在传输前提示输入密码。
